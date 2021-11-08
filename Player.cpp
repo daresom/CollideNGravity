@@ -82,4 +82,4 @@ void Player::playerMovement(float dt, float gravity) {
 		Player::isOnFloor = false;
 		Player::hasJumped = true;
 	}
-}
+} 
