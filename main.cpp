@@ -1,75 +1,85 @@
-#include <SFML/Graphics.hpp>
-#include <iostream>
 #include "Player.h"
 #include "Object.h"
 
-float dt;
-
-using namespace sf;
-
-void collision(Player* player, Object object[], int size, float dt) {
-    FloatRect playerHitbox = player->getSprite().getGlobalBounds();
-    FloatRect nextPos = player->getNextPos();
-    
-    for (int i = 0; i < size; i++) {
-        FloatRect objectBox = object[i].getSprite().getGlobalBounds();
-
-        if (nextPos.intersects(objectBox)) {
-            if (playerHitbox.top < objectBox.top && playerHitbox.top - playerHitbox.height < objectBox.top) { //Top collision platform
-                std::cout << "h";
-                player->velocityY = 0;
-                player->isOnFloor = true;
-                player->setSpritePos(player->x, objectBox.top - playerHitbox.height);
-            }
-            if (playerHitbox.top > objectBox.top - objectBox.height && playerHitbox.top - playerHitbox.top < objectBox.top) { //Bottom collision platform
-                player->velocityY = 0;
-                player->isOnFloor = false;
-                player->apply(dt);
-            }
-        }
-    }
+// Getter and Setter methods
+void Player::setJumpForce(float num) {
+	Player::jumpForce = num;
 }
 
-int main()
-{
-    RenderWindow window(VideoMode(800, 500), "SFML works!");
-    Player player;
-    Object floor[2];
-    player.setSprite(sf::Vector2f(50, 50));
-    floor[0].setSpriteSize(sf::Vector2f(1000,25));
-    floor[0].setCords(0, 400);
+float Player::getJumpForce() {
+	return Player::jumpForce;
+ }
 
-    floor[1].setSpriteSize(sf::Vector2f(100, 25));
-    floor[1].setCords(200, 300);
+void Player::setMoveSpeed(float num) {
+	Player::moveSpeed = num;
+}
 
-    Clock deltaTime;
+float Player::getMoveSpeed() {
+	return Player::moveSpeed;
+}
 
-    while (window.isOpen())
-    {
-        dt = deltaTime.restart().asSeconds();
-        Event event;
-        while (window.pollEvent(event))
-        {
-            if (event.type == Event::Closed)
-                window.close();
-        }
+void Player::setSprite(sf::Vector2f vect) {
+	Player::rect.setFillColor(sf::Color::Red);
+	Player::rect.setSize(vect);
+}
 
-        player.playerMovement(dt, 2000);
-        collision(&player, floor, 2, dt);
+void Player::setSpritePos(float aX, float aY) {
+	Player::x = aX;
+	Player::y = aY;
+	Player::rect.setPosition(Player::x, Player::y);
+}
 
-        player.apply(dt);
+sf::RectangleShape Player::getSprite() {
+	return Player::rect;
+}
 
-        std::cout << player.isOnFloor << std::endl;
+sf::FloatRect Player::getNextPos() {
+	return Player::nextPos;
+}
 
-        window.clear();
+//Movement
 
-        for (int i = 0; i < 2; i++) {
-            window.draw(floor[i].getSprite());
-        }
+void Player::apply(float dt) {
+	if (!Player::isOnFloor) { //Gravity
+		Player::velocityY += 2000 * dt;
+	}
 
-        window.draw(player.getSprite());
-        window.display();
-    }
+	Player::nextPos = Player::rect.getGlobalBounds();
+	Player::nextPos.left += velocityX;
+	Player::nextPos.top += velocityY;
 
-    return 0;
+	Player::x += Player::velocityX;
+	Player::y += Player::velocityY * dt;
+
+	Player::rect.setPosition(Player::x, Player::y);
+
+	Player::velocityX = 0;
+}
+
+
+void Player::playerMovement(float dt, float gravity) {
+	Player::nextPos = Player::rect.getGlobalBounds();
+	Player::isKeyPressed = false;
+	//Movement
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
+		Player::velocityX = -Player::moveSpeed * dt;
+	}
+	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
+		Player::velocityX = Player::moveSpeed * dt;
+	}
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) { //Jump
+		Player::isKeyPressed = true;
+	}
+	
+	if (Player::isOnFloor) {
+		Player::hasJumped = false;
+	}
+
+	if (Player::isKeyPressed && Player::isOnFloor && !Player::hasJumped) {
+		Player::velocityY = 0;
+		Player::velocityY = -jumpForce;
+		Player::isOnFloor = false;
+		Player::hasJumped = true;
+	}
 }
